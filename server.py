@@ -41,7 +41,7 @@ def book(competition,club):
             return render_template('booking.html',club=foundClub,competition=foundCompetition)
         else:
             flash("This competition is passed you can't book places anymore")
-            return render_template('welcome.html', club=club, competitions=competitions)
+            return render_template('welcome.html', club=foundClub, competitions=competitions)
     else:
         flash("Something went wrong-please try again")
         return render_template('welcome.html', club=club, competitions=competitions)
