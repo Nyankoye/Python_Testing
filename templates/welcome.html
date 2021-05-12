@@ -30,6 +30,7 @@
         <hr />
         {% endfor %}
     </ul>
+    {% if other_clubs %}
     <h3>Clubs:</h3>
     <ul>
         {% for other_club in other_clubs%}
@@ -39,7 +40,8 @@
         <hr />
         {% endfor %}
     </ul>
-    {%endwith%}
+    {% endif %}
+    {% endwith %}
 
 </body>
 </html>
