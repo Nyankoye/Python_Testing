@@ -29,10 +29,10 @@ def index():
 
 @app.route('/showSummary',methods=['POST'])
 def showSummary():
-    if request.form['email'] in clubs:
-        club = [club for club in clubs if club['email'] == request.form['email']][0]
+    club = [club for club in clubs if club['email'] == request.form['email']]
+    if len(club)!=0:
         other_clubs = [other_club for other_club in clubs if not other_club['email'] == request.form['email']]
-        return render_template('welcome.html',club=club,competitions=competitions,other_clubs=other_clubs)
+        return render_template('welcome.html',club=club[0],competitions=competitions,other_clubs=other_clubs)
     else:
         flash("Sorry, that email wasn't found")
         return redirect(url_for('index'))
