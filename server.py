@@ -1,6 +1,6 @@
 import json
 from flask import Flask,render_template,request,redirect,flash,url_for
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def loadClubs():
@@ -36,8 +36,9 @@ def showSummary():
 def book(competition,club):
     foundClub = [c for c in clubs if c['name'] == club][0]
     foundCompetition = [c for c in competitions if c['name'] == competition][0]
+    date_2_days_ago = datetime.now() - timedelta(days=2)
     if foundClub and foundCompetition:
-        if datetime.strptime(foundCompetition['date'],'%Y-%m-%d %H:%M:%S')>datetime.now():    
+        if datetime.strptime(foundCompetition['date'],'%Y-%m-%d %H:%M:%S')>date_2_days_ago:
             return render_template('booking.html',club=foundClub,competition=foundCompetition)
         else:
             flash("This competition is passed you can't book places anymore")
