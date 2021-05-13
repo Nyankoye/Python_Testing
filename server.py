@@ -52,11 +52,16 @@ def book(competition,club):
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
+    other_clubs = [other_club for other_club in clubs if not other_club['email'] == club['email']]
     placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    club['points'] = int(club['points'])-placesRequired
-    flash('Great-booking complete!')
-    return render_template('welcome.html', club=club, competitions=competitions)
+    if int(competition['numberOfPlaces']) >= placesRequired and placesRequired<=12:
+        competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
+        club['points'] = int(club['points'])-placesRequired
+        flash('Great-booking complete!')
+        return render_template('welcome.html', club=club, competitions=competitions, other_clubs=other_clubs)
+    else:
+        flash('You may not reserve more than 12 places per competition!')
+        return render_template('welcome.html', club=club, competitions=competitions, other_clubs=other_clubs)
 
 
 # TODO: Add route for points display
