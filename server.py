@@ -1,16 +1,21 @@
+import os
 import json
 from flask import Flask,render_template,request,redirect,flash,url_for
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def loadClubs():
-    with open('clubs.json') as c:
+    directory = os.path.dirname(__file__)
+    path_to_file = os.path.join(directory, 'clubs.json')
+    with open(path_to_file) as c:
          listOfClubs = json.load(c)['clubs']
          return listOfClubs
 
 
 def loadCompetitions():
-    with open('competitions.json') as comps:
+    directory = os.path.dirname(__file__)
+    path_to_file = os.path.join(directory,'competitions.json')
+    with open(path_to_file) as comps:
          listOfCompetitions = json.load(comps)['competitions']
          return listOfCompetitions
 
@@ -28,20 +33,20 @@ def index():
 @app.route('/showSummary',methods=['POST'])
 def showSummary():
     club = [club for club in clubs if club['email'] == request.form['email']][0]
-    other_clubs = [other_club for other_club in clubs if not other_club['email'] == request.form['email']]
-    return render_template('welcome.html',club=club,competitions=competitions,other_clubs=other_clubs)
+    return render_template('welcome.html',club=club,competitions=competitions)
 
 
 @app.route('/book/<competition>/<club>')
 def book(competition,club):
     foundClub = [c for c in clubs if c['name'] == club][0]
     foundCompetition = [c for c in competitions if c['name'] == competition][0]
+    # 48H before the compettion start, you can't book
+    date = datetime.now() - timedelta(days=2)
     if foundClub and foundCompetition:
-        if datetime.strptime(foundCompetition['date'],'%Y-%m-%d %H:%M:%S')>datetime.now():    
+        if datetime.strptime(foundCompetition['date'],'%Y-%m-%d %H:%M:%S') > date:    
             return render_template('booking.html',club=foundClub,competition=foundCompetition)
         else:
             flash("This competition is passed you can't book places anymore")
-            return render_template('welcome.html', club=foundClub, competitions=competitions)
     else:
         flash("Something went wrong-please try again")
         return render_template('welcome.html', club=club, competitions=competitions)
