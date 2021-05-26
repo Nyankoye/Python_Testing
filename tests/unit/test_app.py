@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 from unittest.mock import patch
+from flask import request
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from server import app
@@ -51,8 +52,11 @@ class TestServer(unittest.TestCase):
                                                                 places=2),
                                                                 follow_redirects=True)
             assert response.status_code == 200
-            assert b'Number of Places: 23' in response.data
-            assert b'Points available: 11' in response.data
+            # look for competition in competitions list et club in clubs list to get their points and check
+            club_points = [club['points'] for club in self.clubs if club['name'] == request.form['club']][0]
+            competition_points = [competition['numberOfPlaces'] for competition in self.competitions if competition['name'] == request.form['competition']][0]
+            assert str(club_points) and str(competition_points) in str(response.data)
+
 
 if __name__ == '__main__':
     unittest.main()
