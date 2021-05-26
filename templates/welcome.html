@@ -30,17 +30,6 @@
         <hr />
         {% endfor %}
     </ul>
-    {% if other_clubs %}
-    <h3>Clubs:</h3>
-    <ul>
-        {% for other_club in other_clubs%}
-        <li>
-            Club: {{other_club['name']}}<br />
-            Points available: {{other_club['points']}}
-        <hr />
-        {% endfor %}
-    </ul>
-    {% endif %}
     {% endwith %}
 
 </body>

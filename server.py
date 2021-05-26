@@ -1,16 +1,21 @@
 import json
+import os
 from flask import Flask,render_template,request,redirect,flash,url_for
 from datetime import datetime, timedelta
 
 
 def loadClubs():
-    with open('clubs.json') as c:
+    directory = os.path.dirname(__file__)
+    path_to_file = os.path.join(directory, 'clubs.json')
+    with open(path_to_file) as c:
          listOfClubs = json.load(c)['clubs']
          return listOfClubs
 
 
 def loadCompetitions():
-    with open('competitions.json') as comps:
+    directory = os.path.dirname(__file__)
+    path_to_file = os.path.join(directory,'competitions.json')
+    with open(path_to_file) as comps:
          listOfCompetitions = json.load(comps)['competitions']
          return listOfCompetitions
 
@@ -52,16 +57,15 @@ def book(competition,club):
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
-    other_clubs = [other_club for other_club in clubs if not other_club['email'] == club['email']]
     placesRequired = int(request.form['places'])
-    if int(competition['numberOfPlaces']) >= placesRequired and placesRequired<=12:
+    if int(competition['numberOfPlaces']) >= placesRequired and placesRequired<=12 and placesRequired>=0:
         competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
         club['points'] = int(club['points'])-placesRequired
         flash('Great-booking complete!')
-        return render_template('welcome.html', club=club, competitions=competitions, other_clubs=other_clubs)
+        return render_template('welcome.html', club=club, competitions=competitions)
     else:
         flash('You may not reserve more than 12 places per competition!')
-        return render_template('welcome.html', club=club, competitions=competitions, other_clubs=other_clubs)
+        return render_template('welcome.html', club=club, competitions=competitions)
 
 
 # TODO: Add route for points display
