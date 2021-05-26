@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 from unittest.mock import patch
+from flask import request
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from server import app
@@ -21,6 +22,19 @@ class TestServer(unittest.TestCase):
                     "points": "4"
                 },
             ]
+
+    competitions = [
+                        {
+                            "name": "Spring Festival TEST",
+                            "date": "2020-03-27 10:00:00",
+                            "numberOfPlaces": "25"
+                        },
+                        {
+                            "name": "Fall Classic",
+                            "date": "2020-10-22 13:30:00",
+                            "numberOfPlaces": "14"
+                        }
+                    ]
 
     @patch('server.clubs', clubs)
     def test_showClubs(self):
@@ -48,7 +62,29 @@ class TestServer(unittest.TestCase):
         """
         for club in iterable:
             assert club['name'] in response.data.decode('utf8')
-            assert club['points'] in response.data.decode('utf8')
+            assert str(club['points']) in response.data.decode('utf8')
+
+    @patch('server.clubs',clubs)
+    @patch('server.competitions',competitions)
+    def test_purchasePlaces(self):
+        """
+            Given: A club secretary wishes to redeem points for a place in a competition
+            When: The number of places is confirmed
+            Then: The amount of club points available remain the same
+            Expected: The amount of points used should be deducted from the club's balance.
+        """
+
+        # Create a test client using the Flask application configured for testing
+        with app.test_client() as test_client:
+            club_name = 'Simply Lift TEST'
+            club_balance_before = [int(club['points']) for club in self.clubs if club['name'] == club_name][0]
+            response = test_client.post('/purchasePlaces', data=dict(competition='Spring Festival TEST',
+                                                                club=club_name,
+                                                                places=2),
+                                                                follow_redirects=True)
+            assert response.status_code == 200
+            # check if the club current balance have changed
+            assert str(club_balance_before - int(request.form['places'])) in str(response.data)
 
 
 if __name__ == '__main__':
