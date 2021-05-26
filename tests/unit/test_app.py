@@ -2,13 +2,9 @@ import os
 import sys
 import unittest
 from unittest.mock import patch
-from flask import request
-from flask.signals import message_flashed
-
-from flask.wrappers import Response
-
+from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from server import app, book
+from server import app
 
 
 class TestServer(unittest.TestCase):
@@ -54,17 +50,15 @@ class TestServer(unittest.TestCase):
         """
         
         with app.test_client() as c:
-            response = c.get('/book/TEST Competitiion/Simply Lift')
-            booking_permission = "How many places"
-            # Check if there is a message in response.data 
-            if not booking_permission in str(response.data):
+            competition_name = "TEST Competitiion"
+            response = c.get('/book/'+competition_name+'/Simply Lift')
+            competition_date = [competition['date'] for competition in self.competitions if competition['name'] == competition_name][0]
+            
+            date = datetime.now() - timedelta(days=2)
+            if datetime.strptime(competition_date,'%Y-%m-%d %H:%M:%S') < date:
                 assert b"This competition is passed you can&#39;t book places anymore" in response.data
             else:
                 assert b'How many places' in response.data
-
-
-        
-        
 
 
 if __name__ == '__main__':
