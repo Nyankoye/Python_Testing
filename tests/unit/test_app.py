@@ -47,15 +47,15 @@ class TestServer(unittest.TestCase):
 
         # Create a test client using the Flask application configured for testing
         with app.test_client() as test_client:
+            club_name = 'Simply Lift TEST'
+            club_balance_before = [int(club['points']) for club in self.clubs if club['name'] == club_name][0]
             response = test_client.post('/purchasePlaces', data=dict(competition='Spring Festival TEST',
-                                                                club='Simply Lift TEST',
+                                                                club=club_name,
                                                                 places=2),
                                                                 follow_redirects=True)
             assert response.status_code == 200
-            # look for competition in competitions list et club in clubs list to get their points and check
-            club_points = [club['points'] for club in self.clubs if club['name'] == request.form['club']][0]
-            competition_points = [competition['numberOfPlaces'] for competition in self.competitions if competition['name'] == request.form['competition']][0]
-            assert str(club_points) and str(competition_points) in str(response.data)
+            # check if the club current balance have changed
+            assert str(club_balance_before - int(request.form['places'])) in str(response.data)
 
 
 if __name__ == '__main__':
