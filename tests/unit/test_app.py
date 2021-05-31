@@ -3,7 +3,7 @@ import sys
 import unittest
 from unittest.mock import patch
 from flask import request
-
+from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from server import app
 
@@ -33,6 +33,11 @@ class TestServer(unittest.TestCase):
                             "name": "Fall Classic",
                             "date": "2020-10-22 13:30:00",
                             "numberOfPlaces": "14"
+                        },
+                        {
+                            "name": "TEST Competitiion",
+                            "date": "2021-10-22 13:30:00",
+                            "numberOfPlaces": "13"
                         }
                     ]
 
@@ -78,13 +83,34 @@ class TestServer(unittest.TestCase):
         with app.test_client() as test_client:
             club_name = 'Simply Lift TEST'
             club_balance_before = [int(club['points']) for club in self.clubs if club['name'] == club_name][0]
-            response = test_client.post('/purchasePlaces', data=dict(competition='Spring Festival TEST',
+            response = test_client.post('/purchasePlaces', data=dict(competition='TEST Competitiion',
                                                                 club=club_name,
                                                                 places=2),
                                                                 follow_redirects=True)
             assert response.status_code == 200
             # check if the club current balance have changed
             assert str(club_balance_before - int(request.form['places'])) in str(response.data)
+    
+    @patch('server.competitions', competitions)
+    @patch('server.clubs', clubs)
+    def test_book(self):
+        """
+            When: They book a number of places on a competition that has happened in the past
+            Then: They receive a confirmation message
+            Expected: They should not be able to book a place on a post-dated competition 
+            (but past competitions should be visible). 
+        """
+        
+        with app.test_client() as c:
+            competition_name = "TEST Competitiion"
+            response = c.get('/book/'+competition_name+'/Simply Lift TEST')
+            competition_date = [competition['date'] for competition in self.competitions if competition['name'] == competition_name][0]
+            
+            date = datetime.now() - timedelta(days=2)
+            if datetime.strptime(competition_date,'%Y-%m-%d %H:%M:%S') < date:
+                assert b"This competition is passed you can&#39;t book places anymore" in response.data
+            else:
+                assert b'How many places' in response.data
 
 
 if __name__ == '__main__':

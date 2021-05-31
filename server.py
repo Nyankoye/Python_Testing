@@ -1,6 +1,7 @@
 import os
 import json
 from flask import Flask,render_template,request,redirect,flash,url_for
+from datetime import datetime, timedelta
 
 
 def loadClubs():
@@ -34,18 +35,21 @@ def showSummary():
     club = [club for club in clubs if club['email'] == request.form['email']][0]
     return render_template('welcome.html',club=club,competitions=competitions)
 
-
 @app.route('/clubs',methods=['GET'])
 def showClubs():
     return render_template('clubs.html',clubs=clubs)
-
 
 @app.route('/book/<competition>/<club>')
 def book(competition,club):
     foundClub = [c for c in clubs if c['name'] == club][0]
     foundCompetition = [c for c in competitions if c['name'] == competition][0]
+    # 48H before the compettion start, you can't book
+    date = datetime.now() - timedelta(days=2)
     if foundClub and foundCompetition:
-        return render_template('booking.html',club=foundClub,competition=foundCompetition)
+        if datetime.strptime(foundCompetition['date'],'%Y-%m-%d %H:%M:%S') > date:    
+            return render_template('booking.html',club=foundClub,competition=foundCompetition)
+        else:
+            flash("This competition is passed you can't book places anymore")
     else:
         flash("Something went wrong-please try again")
         return render_template('welcome.html', club=club, competitions=competitions)
