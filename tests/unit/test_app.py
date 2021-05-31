@@ -13,7 +13,7 @@ class TestServer(unittest.TestCase):
     clubs = [
                 {
                     "name": "Simply Lift TEST",
-                    "email": "john@simplylift_test.co",
+                    "email": "yves.loua@gmail.com",
                     "points": "5"
                 },
                 {
@@ -90,7 +90,6 @@ class TestServer(unittest.TestCase):
                                                                 places=4),
                                                                 follow_redirects=True)
             assert response.status_code == 200
-            # check if the club current balance have changed
             # check if places required are no more than 12 places
             if int(request.form['places']) <= 12 and int(request.form['places']) > 0:
                 # check if places required are no more than club points
@@ -123,6 +122,25 @@ class TestServer(unittest.TestCase):
                 assert b"This competition is passed you can&#39;t book places anymore" in response.data
             else:
                 assert b'How many places' in response.data
+
+    @patch('server.clubs',clubs)
+    @patch('server.competitions',competitions)
+    def test_index(self):
+        """
+            When: A user types in an email not found in the system
+            Then: App crashes
+            Expected: Display an error message like "Sorry, that email wasn't found." 
+        """
+        # Create a test client using the Flask application configured for testing
+        with app.test_client() as test_client:
+            email = "admin@irontemple.com"
+            club =  [club for club in self.clubs if club['email'] == email]
+            response = test_client.post('/showSummary', data=dict(email=email),follow_redirects=True)
+            if len(club)==0:
+                assert b"Sorry, that email wasn&#39;t found" in response.data
+            else:
+                assert club[0]['email'] in str(response.data)
+
 
 if __name__ == '__main__':
     unittest.main()
