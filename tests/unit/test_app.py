@@ -14,7 +14,7 @@ class TestServer(unittest.TestCase):
                 {
                     "name": "Simply Lift TEST",
                     "email": "john@simplylift_test.co",
-                    "points": "13"
+                    "points": "5"
                 },
                 {
                     "name": "Iron Temple",
@@ -75,7 +75,10 @@ class TestServer(unittest.TestCase):
             Given: A club secretary wishes to redeem points for a place in a competition
             When: The number of places is confirmed
             Then: The amount of club points available remain the same
-            Expected: The amount of points used should be deducted from the club's balance.
+            Expected: - The amount of points used should be deducted from the club's balance.
+                      - They should be able to book no more than 12 places.
+                      - The UI should prevent them from booking more than 12 places.
+                      - They should not be able to redeem more points than available
         """
 
         # Create a test client using the Flask application configured for testing
@@ -84,15 +87,21 @@ class TestServer(unittest.TestCase):
             club_balance_before = [int(club['points']) for club in self.clubs if club['name'] == club_name][0]
             response = test_client.post('/purchasePlaces', data=dict(competition='TEST Competitiion',
                                                                 club=club_name,
-                                                                places=13),
+                                                                places=4),
                                                                 follow_redirects=True)
             assert response.status_code == 200
             # check if the club current balance have changed
-            assert str(club_balance_before - int(request.form['places'])) in str(response.data)
-            if int(request.form['places']) > 12:
-                assert b"You may not reserve more than 12 places per competition!" in response.data
+            # check if places required are no more than 12 places
+            if int(request.form['places']) <= 12 and int(request.form['places']) > 0:
+                # check if places required are no more than club points
+                if club_balance_before < int(request.form['places']):
+                    assert b"you don&#39;t have enough points!" in response.data
+                else:
+                    # check if the club current balance have changed
+                    assert str(club_balance_before - int(request.form['places'])) in str(response.data)
+                    assert b"Great-booking complete!" in response.data
             else:
-                assert b"Great-booking complete!" in response.data
+                assert b"You may not reserve more than 12 places per competition!" in response.data
     
     @patch('server.competitions', competitions)
     @patch('server.clubs', clubs)
@@ -114,7 +123,6 @@ class TestServer(unittest.TestCase):
                 assert b"This competition is passed you can&#39;t book places anymore" in response.data
             else:
                 assert b'How many places' in response.data
-
 
 if __name__ == '__main__':
     unittest.main()
