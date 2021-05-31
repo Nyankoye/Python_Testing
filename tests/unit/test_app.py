@@ -22,7 +22,6 @@ class TestServer(unittest.TestCase):
                     "points": "4"
                 },
             ]
-
     competitions = [
                         {
                             "name": "Spring Festival TEST",
@@ -85,11 +84,15 @@ class TestServer(unittest.TestCase):
             club_balance_before = [int(club['points']) for club in self.clubs if club['name'] == club_name][0]
             response = test_client.post('/purchasePlaces', data=dict(competition='TEST Competitiion',
                                                                 club=club_name,
-                                                                places=2),
+                                                                places=13),
                                                                 follow_redirects=True)
             assert response.status_code == 200
             # check if the club current balance have changed
             assert str(club_balance_before - int(request.form['places'])) in str(response.data)
+            if int(request.form['places']) > 12:
+                assert b"You may not reserve more than 12 places per competition!" in response.data
+            else:
+                assert b"Great-booking complete!" in response.data
     
     @patch('server.competitions', competitions)
     @patch('server.clubs', clubs)
