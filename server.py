@@ -66,11 +66,11 @@ def purchasePlaces():
     club = [c for c in clubs if c['name'] == request.form['club']][0]
     placesRequired = int(request.form['places'])
     if int(competition['numberOfPlaces']) >= placesRequired and placesRequired<=12 and placesRequired>=0:
-        if int(club['points']) < placesRequired:
+        if int(club['points']) < (3*placesRequired):
             flash("you don't have enough points!")
             return render_template('welcome.html', club=club, competitions=competitions)
         competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-        club['points'] = int(club['points'])-placesRequired
+        club['points'] = int(club['points'])-(3*placesRequired)
         flash('Great-booking complete!')
         return render_template('welcome.html', club=club, competitions=competitions)
     else:
