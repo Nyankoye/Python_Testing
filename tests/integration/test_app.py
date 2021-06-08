@@ -3,39 +3,42 @@ import sys
 import unittest
 from unittest.mock import patch
 from flask import request
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from server import app
 
 clubs = [
-            {
-                "name": "Simply Lift TEST",
-                "email": "yves.loua@gmail.com",
-                "points": "6"
-            },
-            {
-                "name": "Iron Temple",
-                "email": "admin@irontemple.com",
-                "points": "4"
-            },
-        ]
+    {
+        "name": "Simply Lift TEST",
+        "email": "yves.loua@gmail.com",
+        "points": "6"
+    },
+    {
+        "name": "Iron Temple",
+        "email": "admin@irontemple.com",
+        "points": "4"
+    },
+]
 competitions = [
-                    {
-                        "name": "Spring Festival TEST",
-                        "date": "2020-03-27 10:00:00",
-                        "numberOfPlaces": "25"
-                    },
-                    {
-                        "name": "Fall Classic",
-                        "date": "2020-10-22 13:30:00",
-                        "numberOfPlaces": "13"
-                    },
-                    {
-                        "name": "TEST Competitiion",
-                        "date": "2021-10-22 13:30:00",
-                        "numberOfPlaces": "13"
-                    }
-                ]
-class Test_showClubs(unittest.TestCase):
+    {
+        "name": "Spring Festival TEST",
+        "date": "2020-03-27 10:00:00",
+        "numberOfPlaces": "25"
+    },
+    {
+        "name": "Fall Classic",
+        "date": "2020-10-22 13:30:00",
+        "numberOfPlaces": "13"
+    },
+    {
+        "name": "TEST Competitiion",
+        "date": "2021-10-22 13:30:00",
+        "numberOfPlaces": "13"
+    }
+]
+
+
+class TestShowClubs(unittest.TestCase):
     @patch('server.clubs', clubs)
     def test_showClubs(self):
         """
@@ -45,7 +48,7 @@ class Test_showClubs(unittest.TestCase):
 
         with app.test_client() as test_client:
             response = test_client.get('/clubs')
-            assert response.status_code == 200 
+            assert response.status_code == 200
             # check if all items of the list are in response.data
             self.check_list_elements_in_response(clubs, response)
 
@@ -64,7 +67,8 @@ class Test_showClubs(unittest.TestCase):
             assert club['name'] in response.data.decode('utf8')
             assert str(club['points']) in response.data.decode('utf8')
 
-class Test_purchasePlaces(unittest.TestCase):
+
+class TestPurchasePlaces(unittest.TestCase):
     """
         Given: A club secretary wishes to redeem points for a place in a competition
         When: The number of places is confirmed
@@ -74,47 +78,48 @@ class Test_purchasePlaces(unittest.TestCase):
                 - The UI should prevent them from booking more than 12 places.
                 - They should not be able to redeem more points than available
     """
-    @patch('server.clubs',clubs)
-    @patch('server.competitions',competitions)
+
+    @patch('server.clubs', clubs)
+    @patch('server.competitions', competitions)
     def test_good_booking(self):
         # Create a test client using the Flask application configured for testing
         with app.test_client() as test_client:
             club_name = 'Simply Lift TEST'
             club_balance_before = [int(club['points']) for club in clubs if club['name'] == club_name][0]
             response = test_client.post('/purchasePlaces', data=dict(competition='TEST Competitiion',
-                                                                club=club_name,
-                                                                places=2),
-                                                                follow_redirects=True)
+                                                                     club=club_name,
+                                                                     places=2),
+                                        follow_redirects=True)
             assert response.status_code == 200
             # check if the club current balance have changed
-            assert str(club_balance_before - int(request.form['places'])*3) in str(response.data)
+            assert str(club_balance_before - int(request.form['places']) * 3) in str(response.data)
             assert b"Great-booking complete!" in response.data
-    
-    @patch('server.clubs',clubs)
-    @patch('server.competitions',competitions)
+
+    @patch('server.clubs', clubs)
+    @patch('server.competitions', competitions)
     def test_not_enough_point(self):
         with app.test_client() as test_client:
             club_name = 'Simply Lift TEST'
             response = test_client.post('/purchasePlaces', data=dict(competition='TEST Competitiion',
-                                                                club=club_name,
-                                                                places=3),
-                                                                follow_redirects=True)
+                                                                     club=club_name,
+                                                                     places=3),
+                                        follow_redirects=True)
 
             assert b"you don&#39;t have enough points!" in response.data
-    
-    @patch('server.clubs',clubs)
-    @patch('server.competitions',competitions)
+
+    @patch('server.clubs', clubs)
+    @patch('server.competitions', competitions)
     def test_not_more_than_12(self):
         with app.test_client() as test_client:
             club_name = 'Simply Lift TEST'
             response = test_client.post('/purchasePlaces', data=dict(competition='TEST Competitiion',
-                                                                club=club_name,
-                                                                places=13),
-                                                                follow_redirects=True)
+                                                                     club=club_name,
+                                                                     places=13),
+                                        follow_redirects=True)
         assert b"You may not reserve more than 12 places per competition!" in response.data
 
 
-class Test_book(unittest.TestCase):
+class TestBook(unittest.TestCase):
     """
         When: They book a number of places on a competition that has happened in the past
         Then: They receive a confirmation message
@@ -128,7 +133,7 @@ class Test_book(unittest.TestCase):
         with app.test_client() as c:
             response = c.get('/book/TEST Competitiion/Simply Lift TEST')
             assert b'How many places' in response.data
-    
+
     @patch('server.competitions', competitions)
     @patch('server.clubs', clubs)
     def test_competition_passed(self):
@@ -136,27 +141,27 @@ class Test_book(unittest.TestCase):
             response = c.get('/book/Spring Festival TEST/Simply Lift TEST')
             assert b"This competition is passed you can&#39;t book places anymore" in response.data
 
-class Test_showSummary(unittest.TestCase):
+
+class TestShowSummary(unittest.TestCase):
     """
         When: A user types in an email not found in the system
         Then: App crashes
         Expected: Display an error message like "Sorry, that email wasn't found." 
     """
 
-    @patch('server.clubs',clubs)
-    @patch('server.competitions',competitions)
+    @patch('server.clubs', clubs)
+    @patch('server.competitions', competitions)
     def test_email_good(self):
         # Create a test client using the Flask application configured for testing
         with app.test_client() as test_client:
             email = "admin@irontemple.com"
-            club =  [club for club in clubs if club['email'] == email]
-            response = test_client.post('/showSummary', data=dict(email=email),follow_redirects=True)
+            club = [club for club in clubs if club['email'] == email]
+            response = test_client.post('/showSummary', data=dict(email=email), follow_redirects=True)
             assert club[0]['email'] in str(response.data)
 
-
-    @patch('server.clubs',clubs)
-    @patch('server.competitions',competitions)
+    @patch('server.clubs', clubs)
+    @patch('server.competitions', competitions)
     def test_email_bad(self):
         with app.test_client() as test_client:
-            response = test_client.post('/showSummary', data=dict(email="vgvhh"),follow_redirects=True)
+            response = test_client.post('/showSummary', data=dict(email="vgvhh"), follow_redirects=True)
             assert b"Sorry, that email wasn&#39;t found" in response.data
